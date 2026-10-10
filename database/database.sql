@@ -1,0 +1,38 @@
+CREATE DATABASE AuthDb;
+GO
+
+USE AuthDb;
+GO
+
+CREATE TABLE [Role](
+IdRole INT PRIMARY KEY IDENTITY,
+Name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE [Menu](
+IdMenu INT PRIMARY KEY IDENTITY,
+Name VARCHAR(50) NOT NULL,
+Link VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE [RoleMenu](
+IdRoleMenu INT PRIMARY KEY IDENTITY,
+IdRole INT NOT NULL,
+IdMenu INT NOT NULL,
+FOREiGN KEY(IdRole) REFERENCES Role(IdRole),
+FOREIGN KEY(IdMenu) REFERENCES Menu(IdMenu)
+);
+
+CREATE TABLE [User](
+IdUser INT PRIMARY KEY IDENTITY,
+Name VARCHAR(50) NOT NULL,
+Email VARCHAR(50) NOT NULL,
+PasswordHash VARCHAR(256) NOT NULL,
+IdRole INT NOT NULL,
+FOREIGN KEY (IdRole) REFERENCES Role(IdRole)
+);
+
+INSERT INTO Role(Name) VALUES ('Admin'), ('Seller');
+INSERT INTO Menu VALUES ('Home', '/home'), ('Go Admin', '/admin'), ('Go Seller', '/seller');
+
+INSERT INTO RoleMenu VALUES (1,1), (1,2), (2,1), (2,3)
