@@ -1,15 +1,10 @@
 @AuthApi_HostAddress = https://localhost:7251
 
-GET {{AuthApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
-
 POST {{AuthApi_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
-  //RegisterRequest
+  "name": "Manuel", "email": "ic.manuel.razo@gmail.com", "password": "admin", "idRole": 1
 }
 
 ###
@@ -18,7 +13,8 @@ POST {{AuthApi_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  //LoginRequest
+  "email": "ic.manuel.razo@gmail.com",
+  "password": "admin"
 }
 
 ###
