@@ -6,15 +6,15 @@
         <mat-card-content class="form-content">
             <mat-form-field appearance="outline">
                 <mat-label>Email</mat-label>
-                <input matInput type="email" autocomplete="off">
+                <input matInput type="email" autocomplete="off" [formField]="myForm.email">
             </mat-form-field>
             <mat-form-field appearance="outline">
                 <mat-label>Password</mat-label>
-                <input matInput type="password">
+                <input matInput type="password" [formField]="myForm.password">
             </mat-form-field>
         </mat-card-content>
         <mat-card-actions class="actions-container">
-            <button matButton="filled" class="full-width">Sign In</button>
+            <button matButton="filled" class="full-width" (click)="login()" [disabled]="myForm().invalid()">Sign In</button>
             <p>
                 Not registered?
                 <a matButton routerLink="/register">Sign Up</a>

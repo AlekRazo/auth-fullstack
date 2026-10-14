@@ -34,7 +34,7 @@ namespace AuthApi.Controllers
             {
                 HttpOnly = true,
                 Secure = true, //False si no se usa HTTPS
-                SameSite = SameSiteMode.Lax, //None
+                SameSite = SameSiteMode.None, //None
                 Expires = DateTimeOffset.UtcNow.AddMinutes(expirationMinutes)
             });
 

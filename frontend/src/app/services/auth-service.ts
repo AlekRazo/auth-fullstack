@@ -27,7 +27,8 @@ export class AuthService {
                 this.currentUser.set(user);
             }),
             catchError((error) => {
-                console.log("Error fron AuthService.");
+                console.log("Error from AuthService.");
+                console.log(error);
                 this.currentUser.set(null);
                 return throwError(() => error);
             })
