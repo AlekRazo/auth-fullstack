@@ -1,1 +1,14 @@
-<p>main-layout works!</p>
+<mat-toolbar>
+    <span>My App</span>
+
+    <span class="example-spacer"></span>
+
+    <a mat-button routerLink="/home">Home</a>
+    <a mat-button routerLink="/admin">Admin</a>
+    <a mat-button routerLink="/seller">Pricing</a>
+    <button matButton="outlined">Logout</button>
+</mat-toolbar>
+
+<main class="content-wrapper">
+    <router-outlet></router-outlet>
+</main>

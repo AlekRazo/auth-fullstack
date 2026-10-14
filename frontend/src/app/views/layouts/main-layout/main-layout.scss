@@ -1,0 +1,22 @@
+.layout-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100vw;
+}
+
+mat-toolbar {
+    background-color: #cbdcff;
+}
+
+.example-spacer {
+    flex: 1 1 auto;
+}
+
+
+// Zona acolchada para mostrar tus páginas hijas de forma limpia
+.content-wrapper {
+    flex: 1;
+    padding: 24px;
+    background-color: #fafafa; // Fondo sutil para que contraste con los componentes
+}
