@@ -1,5 +1,6 @@
 import { FullscreenOverlayContainer } from '@angular/cdk/overlay';
 import { Routes } from '@angular/router';
+import { authGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
     {
@@ -12,7 +13,7 @@ export const routes: Routes = [
     },
     {
         path: '',
-        canMatch: ['authGuaard'],
+        canMatch: [authGuard],
         loadComponent: () => import('./views/layouts/main-layout/main-layout').then(m => m.MainLayout),
         children: [
             {
