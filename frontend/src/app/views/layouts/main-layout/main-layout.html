@@ -7,7 +7,7 @@
         <a mat-button [routerLink]="menu.link">{{menu.name}}</a>
     }
 
-    <button matButton="outlined">Logout</button>
+    <button matButton="outlined" (click)="logout()">Logout</button>
 </mat-toolbar>
 
 <main class="content-wrapper">
