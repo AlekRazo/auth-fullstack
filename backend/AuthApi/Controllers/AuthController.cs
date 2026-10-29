@@ -84,7 +84,27 @@ namespace AuthApi.Controllers
             HttpContext.Request.Cookies.TryGetValue("access_token", out var accessToken);
             HttpContext.Request.Cookies.TryGetValue("refresh_token", out var refreshToken);
 
-            return Ok();
+            var expirationMinutes = _config.GetValue<double>("Jwt:ExpirationTime");
+            //EXTRA: REFRESH
+            var expirationDays = _config.GetValue<double>("Jwt:RefreshExpirationTime");
+            //
+
+            Response.Cookies.Append("access_token", accessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, //False si no se usa HTTPS
+                SameSite = SameSiteMode.None, //None
+                Expires = DateTimeOffset.UtcNow.AddMinutes(expirationMinutes)
+            });
+
+            //EXTRA: REFRESH
+            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, //False si no se usa HTTPS
+                SameSite = SameSiteMode.None, //None
+                Expires = DateTimeOffset.UtcNow.AddDays(expirationDays)
+            });
         }
     }
 }
