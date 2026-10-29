@@ -27,19 +27,20 @@ namespace AuthApi.Services
             return "";
         }
 
-        public async Task<(string errorMessage, string token)> Login(LoginRequest req)
+        public async Task<(string errorMessage, string token, string refreshToken)> Login(LoginRequest req)
         {
             var user = await _db.Users.AsNoTracking().Where(u => u.Email.Equals(req.email)).Include(r => r.IdRoleNavigation).FirstOrDefaultAsync();
 
-            if (user is null) return ("Incorrect Credentials", "");
+            if (user is null) return ("Incorrect Credentials", "", "");
 
             var passwordValid = _passwordService.Verify(req.password, user.PasswordHash);
 
-            if (!passwordValid) return ("Incorrect credentials", "");
+            if (!passwordValid) return ("Incorrect credentials", "", "");
 
             var token = _jwtService.GenerateToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
 
-            return ("", token);
+            return ("", token, refreshToken);
         }
 
         public async Task<GetUserResponse?> Me(int idUser)
@@ -57,6 +58,23 @@ namespace AuthApi.Services
             );
 
             return userResponse;
+        }
+
+        // EXTRA: REFRESH
+        public async Task<(string errorMessage, string token, string refreshToken)> Refresh(string token)
+        {
+            var tokenResult = await _db.RefreshTokens.AsNoTracking().Where(r => r.TokenHash == token).FirstOrDefaultAsync();
+
+            if (user is null) return ("Incorrect Credentials", "", "");
+
+            var passwordValid = _passwordService.Verify(req.password, user.PasswordHash);
+
+            if (!passwordValid) return ("Incorrect credentials", "", "");
+
+            var accessToken = _jwtService.GenerateToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+
+            return ("", accessToken, refreshToken);
         }
     }
 }

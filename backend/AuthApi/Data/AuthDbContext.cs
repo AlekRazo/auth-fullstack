@@ -14,6 +14,8 @@ public partial class AuthDbContext : DbContext
 
     public virtual DbSet<Menu> Menus { get; set; }
 
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<RoleMenu> RoleMenus { get; set; }
@@ -34,6 +36,23 @@ public partial class AuthDbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.IdRefreshToken).HasName("PK__RefreshT__EFC5B7BEBA032E1B");
+
+            entity.ToTable("RefreshToken");
+
+            entity.Property(e => e.IdRefreshToken).ValueGeneratedNever();
+            entity.Property(e => e.TokenHash)
+                .HasMaxLength(64)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.IdUserNavigation).WithMany(p => p.RefreshTokens)
+                .HasForeignKey(d => d.IdUser)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__RefreshTo__IdUse__6754599E");
         });
 
         modelBuilder.Entity<Role>(entity =>

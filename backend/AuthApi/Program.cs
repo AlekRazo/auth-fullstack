@@ -42,6 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 
     options.Events = new JwtBearerEvents
     {
+        //As soon as the request reaches that Authorize attribute, the OnMessageReceived event will be triggered. Then, we simply want to extract the token’s value from the cookie and set it as the Token for the validation process.
         OnMessageReceived = context =>
         {
             context.Token = context.Request.Cookies["access_token"];

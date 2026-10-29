@@ -32,6 +32,16 @@ IdRole INT NOT NULL,
 FOREIGN KEY (IdRole) REFERENCES Role(IdRole)
 );
 
+CREATE TABLE [RefreshToken](
+IdRefreshToken INT PRIMARY KEY,
+IdUser INT NOT NULL,
+TokenHash VARCHAR(64) NOT NULL,
+CreatedAt DATETIME2 NOT NULL,
+ExpiresAt DATETIME2 NOT NULL,
+Revoked BIT NOT NULL,
+FOREIGN KEY (IdUser) REFERENCES User(IdUser)
+);
+
 INSERT INTO Role(Name) VALUES ('Admin'), ('Seller');
 INSERT INTO Menu VALUES ('Home', '/home'), ('Go Admin', '/admin'), ('Go Seller', '/seller');
 
