@@ -1,6 +1,7 @@
 ﻿using AuthApi.Data;
 using AuthApi.DTOs;
 using AuthApi.Entities;
+using Azure;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthApi.Services
@@ -46,7 +47,8 @@ namespace AuthApi.Services
                 IdUser = user.IdUser,
                 TokenHash = _jwtService.HashToken(refreshToken),
                 CreatedAt = currentTime,
-                ExpiresAt = currentTime.AddDays(_config.GetValue<double>("Jwt:RefreshExpirationTime")),
+                //ExpiresAt = currentTime.AddDays(_config.GetValue<double>("Jwt:RefreshExpirationTime")),
+                ExpiresAt = currentTime.AddMinutes(5.0),
                 Revoked = false
             });
 
@@ -87,18 +89,25 @@ namespace AuthApi.Services
             if (tokenResult is null) return ("Invalid refresh token", "", "", null);
 
             // Terminar: Revocar token si se reutiliza
+            if (tokenResult.Revoked)
+            {
+                var allTokens = await _db.RefreshTokens.Where(t => t.IdUser == tokenResult.IdUser && !t.Revoked).ToListAsync();
+                allTokens.ForEach(t => t.Revoked = true);
+                await _db.SaveChangesAsync();
+
+                return ("Invalid refresh token", "", "", null);
+            }
 
             // Validar expiración
+            if (tokenResult.ExpiresAt < DateTime.UtcNow) return ("Expired token", "", "", null);
 
             // Buscar usuario poseedor del token
-            var user = await _db.Users.AsNoTracking().Where(u => u.IdUser == tokenResult.IdUser).FirstOrDefaultAsync();
+            var user = await _db.Users.AsNoTracking().Where(u => u.IdUser == tokenResult.IdUser).Include(r => r.IdRoleNavigation).ThenInclude(rm => rm.RoleMenus).ThenInclude(m => m.IdMenuNavigation).FirstOrDefaultAsync();
 
             if (user is null) return ("Users does not exist", "", "", null);
 
-            // Revocar tokens existentes de ese usuario
-            var tokens = await _db.RefreshTokens.Where(t => t.IdUser == tokenResult.IdUser && !t.Revoked).ToListAsync();
-            tokens.ForEach(t => t.Revoked = true);
-            await _db.SaveChangesAsync();
+            // Revocar token
+            tokenResult.Revoked = true;
 
             // Generar nuevos tokens
             var accessToken = _jwtService.GenerateToken(user);
@@ -110,15 +119,35 @@ namespace AuthApi.Services
                 IdUser = user.IdUser,
                 TokenHash = _jwtService.HashToken(refreshToken),
                 CreatedAt = currentTime,
-                ExpiresAt = currentTime.AddDays(_config.GetValue<double>("Jwt:RefreshExpirationTime")),
+                //ExpiresAt = currentTime.AddDays(_config.GetValue<double>("Jwt:RefreshExpirationTime")),
+                ExpiresAt = currentTime.AddMinutes(5.0),
                 Revoked = false
             });
 
             var result = await _db.SaveChangesAsync();
 
-            if (result == 0) return ("Error generating refresh token.", "", "", null);
-
             return ("", accessToken, refreshToken, currentTime);
         }
+
+        public async Task Logout(string refreshToken)
+        {
+            if (string.IsNullOrEmpty(refreshToken)) return;
+
+            var hashedToken = _jwtService.HashToken(refreshToken);
+            var tokenResult = await _db.RefreshTokens.AsNoTracking().Where(r => r.TokenHash == hashedToken).FirstOrDefaultAsync();
+            var user = await _db.Users.AsNoTracking().Where(u => u.IdUser == tokenResult!.IdUser).FirstOrDefaultAsync();
+            var allTokens = await _db.RefreshTokens.Where(t => t.IdUser == user!.IdUser).ToListAsync();
+            allTokens.ForEach(t => t.Revoked = true);
+            await _db.SaveChangesAsync();
+        }
+
+        public CookieOptions CreateCookie(DateTime expires, string path = "/") => new CookieOptions()
+        {
+            HttpOnly = true,
+            Secure = true, //False si no se usa HTTPS
+            SameSite = SameSiteMode.None,
+            Expires = expires,
+            Path = path
+        };
     }
 }

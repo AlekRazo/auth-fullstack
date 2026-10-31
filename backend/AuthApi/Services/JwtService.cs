@@ -33,7 +33,8 @@ namespace AuthApi.Services
                 Subject = new ClaimsIdentity(claims),
                 Issuer = issuer,
                 Audience = audience,
-                Expires = DateTime.UtcNow.AddMinutes(expirationTime),
+                //Expires = DateTime.UtcNow.AddMinutes(expirationTime),
+                Expires = DateTime.UtcNow.AddMinutes(1),
                 SigningCredentials = credentials
             };
 

@@ -33,13 +33,13 @@ FOREIGN KEY (IdRole) REFERENCES Role(IdRole)
 );
 
 CREATE TABLE [RefreshToken](
-IdRefreshToken INT PRIMARY KEY,
+IdRefreshToken INT PRIMARY KEY IDENTITY,
 IdUser INT NOT NULL,
 TokenHash VARCHAR(64) NOT NULL,
 CreatedAt DATETIME2 NOT NULL,
 ExpiresAt DATETIME2 NOT NULL,
 Revoked BIT NOT NULL,
-FOREIGN KEY (IdUser) REFERENCES User(IdUser)
+FOREIGN KEY (IdUser) REFERENCES [User](IdUser)
 );
 
 INSERT INTO Role(Name) VALUES ('Admin'), ('Seller');

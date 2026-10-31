@@ -29,26 +29,11 @@ namespace AuthApi.Controllers
             if (errorMessage != "") return Conflict(errorMessage);
 
             var expirationMinutes = _config.GetValue<double>("Jwt:ExpirationTime");
-
-            Response.Cookies.Append("access_token", token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, //False si no se usa HTTPS
-                SameSite = SameSiteMode.None, //None
-                Expires = currentDateTime.Value.AddMinutes(expirationMinutes)
-            });
-
             // EXTRA: REFRESH
             var expirationDays = _config.GetValue<double>("Jwt:RefreshExpirationTime");
-
-            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, //False si no se usa HTTPS
-                SameSite = SameSiteMode.None, //None
-                Expires = currentDateTime.Value.AddDays(expirationDays)
-            });
-            //
+            Response.Cookies.Append("access_token", token, _userService.CreateCookie(currentDateTime!.Value.AddMinutes(1)));
+            // EXTRA: REFRESH
+            Response.Cookies.Append("refresh_token", refreshToken, _userService.CreateCookie(currentDateTime!.Value.AddMinutes(5), "/api/Auth"));
 
             return Ok();
         }
@@ -69,10 +54,13 @@ namespace AuthApi.Controllers
         }
 
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             //Almacenar el nombre de la cookie en appsettings
+            HttpContext.Request.Cookies.TryGetValue("refresh_token", out var token);
             Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+            await _userService.Logout(token!);
             return Ok();
         }
 
@@ -80,30 +68,17 @@ namespace AuthApi.Controllers
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
         {
-            //HttpContext.Request.Cookies.TryGetValue("access_token", out var accessToken);
             HttpContext.Request.Cookies.TryGetValue("refresh_token", out var token);
+            var (errorMessage, accessToken, refreshToken, currentDateTime) = await _userService.Refresh(token!);
 
-            var (errorMessage, accessToken, refreshToken, currentDateTime) = await _userService.Refresh(token);
+            if (!string.IsNullOrEmpty(errorMessage)) return Unauthorized();
 
-            var expirationMinutes = _config.GetValue<double>("Jwt:ExpirationTime");
-
-            Response.Cookies.Append("access_token", token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, //False si no se usa HTTPS
-                SameSite = SameSiteMode.None, //None
-                Expires = currentDateTime.Value.AddMinutes(expirationMinutes)
-            });
-
-            var expirationDays = _config.GetValue<double>("Jwt:RefreshExpirationTime");
-
-            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, //False si no se usa HTTPS
-                SameSite = SameSiteMode.None, //None
-                Expires = currentDateTime.Value.AddDays(expirationDays)
-            });
+            var expirationMinutes = _config.GetValue<double>("Jwt:ExpirationTime"); // Optional: Use null-check and throw InvalidOperationException in case value is null
+            // EXTRA: REFRESH
+            var expirationDays = _config.GetValue<double>("Jwt:RefreshExpirationTime"); // Optional: Use null-check and throw InvalidOperationException in case value is null
+            Response.Cookies.Append("access_token", accessToken, _userService.CreateCookie(currentDateTime!.Value.AddMinutes(1)));
+            // EXTRA: REFRESH
+            Response.Cookies.Append("refresh_token", refreshToken, _userService.CreateCookie(currentDateTime!.Value.AddMinutes(5), "/api/Auth"));
 
             return Ok();
         }

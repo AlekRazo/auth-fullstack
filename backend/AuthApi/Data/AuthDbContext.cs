@@ -26,7 +26,7 @@ public partial class AuthDbContext : DbContext
     {
         modelBuilder.Entity<Menu>(entity =>
         {
-            entity.HasKey(e => e.IdMenu).HasName("PK__Menu__4D7EA8E1A56479C8");
+            entity.HasKey(e => e.IdMenu).HasName("PK__Menu__4D7EA8E19EF20289");
 
             entity.ToTable("Menu");
 
@@ -40,11 +40,10 @@ public partial class AuthDbContext : DbContext
 
         modelBuilder.Entity<RefreshToken>(entity =>
         {
-            entity.HasKey(e => e.IdRefreshToken).HasName("PK__RefreshT__EFC5B7BEBA032E1B");
+            entity.HasKey(e => e.IdRefreshToken).HasName("PK__RefreshT__EFC5B7BE7B3F2CCA");
 
             entity.ToTable("RefreshToken");
 
-            entity.Property(e => e.IdRefreshToken).ValueGeneratedNever();
             entity.Property(e => e.TokenHash)
                 .HasMaxLength(64)
                 .IsUnicode(false);
@@ -52,12 +51,12 @@ public partial class AuthDbContext : DbContext
             entity.HasOne(d => d.IdUserNavigation).WithMany(p => p.RefreshTokens)
                 .HasForeignKey(d => d.IdUser)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RefreshTo__IdUse__6754599E");
+                .HasConstraintName("FK__RefreshTo__IdUse__5535A963");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.IdRole).HasName("PK__Role__B43690540726A620");
+            entity.HasKey(e => e.IdRole).HasName("PK__Role__B4369054C1DC1C70");
 
             entity.ToTable("Role");
 
@@ -68,7 +67,7 @@ public partial class AuthDbContext : DbContext
 
         modelBuilder.Entity<RoleMenu>(entity =>
         {
-            entity.HasKey(e => e.IdRoleMenu).HasName("PK__RoleMenu__98F443DD694B4333");
+            entity.HasKey(e => e.IdRoleMenu).HasName("PK__RoleMenu__98F443DDE7012905");
 
             entity.ToTable("RoleMenu");
 
@@ -85,7 +84,7 @@ public partial class AuthDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.IdUser).HasName("PK__User__B7C92638668EB37C");
+            entity.HasKey(e => e.IdUser).HasName("PK__User__B7C9263841D92B71");
 
             entity.ToTable("User");
 

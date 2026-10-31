@@ -1,10 +1,12 @@
 using AuthApi.Data;
 using AuthApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
+using System.Reflection.Metadata;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,25 +30,68 @@ builder.Services.AddOpenApi("v1", options =>
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
 
-        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        document.Components.SecuritySchemes["AccessCookie"] = new OpenApiSecurityScheme
         {
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            Description = "Enter your JWT token (without the 'Bearer prefix)."
+            Type = SecuritySchemeType.ApiKey,
+            In = ParameterLocation.Cookie,
+            Name = "access_token",
+            Description = "JWT authentication using as HttpOnly cookie."
         };
 
-        if (document.Paths is not null)
-            foreach (var path in document.Paths.Values)
-                if (path.Operations is not null)
-                    foreach (var operation in path.Operations.Values)
+        document.Components.SecuritySchemes["RefreshCookie"] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.ApiKey,
+            In = ParameterLocation.Cookie,
+            Name = "refresh_token",
+            Description = "Refresh Token stores in an HttpOnly cookie."
+        };
+
+        //// Configuration by Header
+        //document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        //{
+        //    Type = SecuritySchemeType.Http,
+        //    Scheme = "bearer",
+        //    BearerFormat = "JWT",
+        //    Description = "Enter your JWT token (without the 'Bearer prefix)."
+        //};
+
+        return Task.CompletedTask;
+    });
+
+    options.AddOperationTransformer((operation, context, ct) =>
+    {
+        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+        var path = context.Description.RelativePath?.Trim('/');
+
+        if (string.Equals(path, "api/auth/refresh", StringComparison.OrdinalIgnoreCase))
+        {
+            operation.Security ??= new List<OpenApiSecurityRequirement>();
+            operation.Security.Add(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("RefreshCookie", context.Document)] = []
+                // Configuration by header
+                //[new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
+            });
+        }
+        else
+        {
+            var requiresAuth = metadata.OfType<IAuthorizeData>().Any() && !metadata.OfType<IAllowAnonymous>().Any();
+
+            if (requiresAuth)
+            {
+                operation.Security ??= new List<OpenApiSecurityRequirement>();
+
+                var alreadyConfigured = operation.Security.Any(requirement => requirement.Keys.Any(scheme => scheme is OpenApiSecuritySchemeReference reference && reference.Reference.Id == "Bearer"));
+
+                if (!alreadyConfigured)
+                    operation.Security.Add(new OpenApiSecurityRequirement
                     {
-                        operation.Security ??= new List<OpenApiSecurityRequirement>();
-                        operation.Security.Add(new OpenApiSecurityRequirement
-                        {
-                            [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-                        });
-                    }
+                        [new OpenApiSecuritySchemeReference("AccessCookie", context.Document)] = []
+                        // Configuration by header
+                        //[new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
+                    });
+            }
+        }
 
         return Task.CompletedTask;
     });
@@ -77,15 +122,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuerSigningKey = true,
         ValidIssuer = issuer,
         ValidAudience = audience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ClockSkew = TimeSpan.Zero
     };
 
     options.Events = new JwtBearerEvents
     {
-        //As soon as the request reaches that Authorize attribute, the OnMessageReceived event will be triggered. Then, we simply want to extract the token’s value from the cookie and set it as the Token for the validation process.
+        //As soon as the request reaches that Authorize attribute, the OnMessageReceived event will be triggered.
+        //Then, we simply want to extract the token’s value from the cookie and set it as the Token for the validation process.
         OnMessageReceived = context =>
         {
-            context.Token = context.Request.Cookies["access_token"];
+            context.Request.Cookies.TryGetValue("access_token", out var accessToken);
+
+            if (!string.IsNullOrEmpty(accessToken))
+                context.Token = accessToken;
+
             return Task.CompletedTask;
         },
         OnAuthenticationFailed = context =>
